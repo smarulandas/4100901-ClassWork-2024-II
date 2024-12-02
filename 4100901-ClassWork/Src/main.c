@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include "systick.h"
+
 typedef struct {
     volatile uint32_t MEMRMP;
     volatile uint32_t CFGR1;
@@ -22,14 +24,6 @@ typedef struct {
     volatile uint32_t PR2;
 } EXTI_t;
 
-
-typedef struct {
-    volatile uint32_t CTRL;
-    volatile uint32_t LOAD;
-    volatile uint32_t VAL;
-    volatile uint32_t CALIB;
-
-} SysTick_t;
 
 typedef struct {
     volatile uint32_t MODER;
@@ -62,7 +56,6 @@ typedef struct {
 
 #define GPIOA ((GPIO_t *)0x48000000) // Base address of GPIOA
 #define GPIOC ((GPIO_t *)0x48000800) // Base address of GPIOC
-#define SysTick ((SysTick_t *)0xE000E010) // Base address of SysTick
 
 #define LED_PIN 5 // Pin 5 of GPIOA
 #define BUTTON_PIN 13 // Pin 13 of GPIOC
@@ -71,15 +64,9 @@ typedef struct {
 #define BUTTON_IS_RELEASED()   (GPIOC->IDR & (1 << BUTTON_PIN))
 #define TOGGLE_LED()           (GPIOA->ODR ^= (1 << LED_PIN))
 
-volatile uint32_t ms_counter = 0; // Counter for milliseconds
 volatile uint8_t button_pressed = 0; // Flag to indicate button press
 
-void configure_systick_and_start(void)
-{
-    SysTick->CTRL = 0x4;     // Disable SysTick for configuration, use processor clock
-    SysTick->LOAD = 3999;    // Reload value for 1 ms (assuming 4 MHz clock)
-    SysTick->CTRL = 0x7;     // Enable SysTick, processor clock, no interrupt
-}
+
 
 void init_gpio_pin(GPIO_t *GPIOx, uint8_t pin, uint8_t mode)
 {
@@ -124,20 +111,20 @@ int main(void)
         case 0: // idle
             if (button_pressed != 0) { // If button is pressed
                 state = 1;
-            } else if (ms_counter >= 500) { // Blink LED every 500 ms
+            } else if (systick_GetTick() >= 500) { // Blink LED every 500 ms
                 state = 2;
             }
             break;
         case 1: // button pressed
             if (BUTTON_IS_RELEASED()) { // If button is released
                 button_pressed = 0; // Clear button pressed flag
-                ms_counter = 0;
+                systick_reset(); // Reset counter
                 state = 0;
             }
             break;
         case 2: // led toggle
             TOGGLE_LED(); // Toggle LED
-            ms_counter = 0; // Reset counter after blinking
+            systick_reset(); // Reset counter
             state = 0;
             break;
         default:
@@ -147,10 +134,7 @@ int main(void)
     }
 }
 
-void SysTick_Handler(void)
-{
-    ms_counter++;
-}
+
 
 void EXTI15_10_IRQHandler(void)
 {
