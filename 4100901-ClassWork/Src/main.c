@@ -2,14 +2,18 @@
 
 #include "systick.h"
 #include "gpio.h"
+#include "uart.h"
 
 
 int main(void)
 {
     configure_systick_and_start();
     configure_gpio();
+    
+    UART_Init(USART2);
 
     uint8_t state = 0; // state of the FSM
+    UART_send_string(USART2, "Hello World, from main!\r\n");
 
     while (1) {
         switch (state) {

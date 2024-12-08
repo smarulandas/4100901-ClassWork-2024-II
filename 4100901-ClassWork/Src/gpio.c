@@ -1,4 +1,5 @@
 #include "gpio.h"
+#include "rcc.h"
 
 #define EXTI_BASE 0x40010400
 #define EXTI ((EXTI_t *)EXTI_BASE)
@@ -7,13 +8,10 @@
 #define NVIC_ISER1 ((uint32_t *)(0xE000E104)) // NVIC Interrupt Set-Enable Register
 
 
-#define RCC_APB2ENR ((uint32_t *)(RCC_BASE + 0x60)) // APB2 peripheral clock enable register
 
 #define SYSCFG_BASE 0x40010000
 #define SYSCFG ((SYSCFG_t *)SYSCFG_BASE)
 
-#define RCC_BASE 0x40021000
-#define RCC_AHB2ENR ((uint32_t *)(RCC_BASE + 0x4C))
 
 #define GPIOA ((GPIO_t *)0x48000000) // Base address of GPIOA
 #define GPIOC ((GPIO_t *)0x48000800) // Base address of GPIOC
@@ -26,6 +24,33 @@
 #define TOGGLE_LED()           (GPIOA->ODR ^= (1 << LED_PIN))
 
 volatile uint8_t button_pressed = 0; // Flag to indicate button press
+
+void configure_gpio_for_usart() {
+    // Enable GPIOA clock
+    *RCC_AHB2ENR |= (1 << 0);
+
+    // Configure PA2 (TX) as alternate function
+    GPIOA->MODER &= ~(3U << (2 * 2)); // Clear mode bits for PA2
+    GPIOA->MODER |= (2U << (2 * 2));  // Set alternate function mode for PA2
+
+    // Configure PA3 (RX) as alternate function
+    GPIOA->MODER &= ~(3U << (3 * 2)); // Clear mode bits for PA3
+    GPIOA->MODER |= (2U << (3 * 2));  // Set alternate function mode for PA3
+
+    // Set alternate function to AF7 for PA2 and PA3
+    GPIOA->AFR[0] &= ~(0xF << (4 * 2)); // Clear AFR bits for PA2
+    GPIOA->AFR[0] |= (7U << (4 * 2));   // Set AFR to AF7 for PA2
+    GPIOA->AFR[0] &= ~(0xF << (4 * 3)); // Clear AFR bits for PA3
+    GPIOA->AFR[0] |= (7U << (4 * 3));   // Set AFR to AF7 for PA3
+
+    // Configure PA2 and PA3 as very high speed
+    GPIOA->OSPEEDR |= (3U << (2 * 2)); // Very high speed for PA2
+    GPIOA->OSPEEDR |= (3U << (3 * 2)); // Very high speed for PA3
+
+    // Configure PA2 and PA3 as no pull-up, no pull-down
+    GPIOA->PUPDR &= ~(3U << (2 * 2)); // No pull-up, no pull-down for PA2
+    GPIOA->PUPDR &= ~(3U << (3 * 2)); // No pull-up, no pull-down for PA3
+}
 
 void init_gpio_pin(GPIO_t *GPIOx, uint8_t pin, uint8_t mode)
 {
@@ -56,6 +81,8 @@ void configure_gpio(void)
 
     // Enable EXTI15_10 interrupt
     *NVIC_ISER1 |= (1 << (EXTI15_10_IRQn - 32));
+
+    configure_gpio_for_usart();
 }
 
 uint8_t gpio_button_is_pressed(void)
