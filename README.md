@@ -58,10 +58,10 @@ La arquitectura se basa en capas de abstracción y una Máquina de Estados Finit
   En los estados `TURN_LEFT_INFINITE` y `TURN_RIGHT_INFINITE`, además del comando stop (por UART u otro), una pulsación de la direccional opuesta también detiene la parpadeante actual. Por ejemplo, si estás en `TURN_LEFT_INFINITE` y se pulsa la direccional derecha (ya sea simple o doble vez), se interpreta como una orden de parar y el estado retorna a `OFF`.  
   De igual forma, si estás en `TURN_RIGHT_INFINITE` y se presiona la direccional izquierda, el estado se mueve a `OFF`.
 
-### Lógica de Tiempo:
+- **Lógica de Tiempo:**
 
-* El SysTick o un timer sirve para contar milisegundos. Por ejemplo, cada periodo dado en ms se alterna el estado de la luz (encendido/apagado) para generar el parpadeo. [Ver (ECE/SAE/FMVS)]
-* Para los patrones de 3 parpadeos, se lleva un conteo interno (ej: cada toggle cuenta como medio ciclo de parpadeo; 6 toggles = 3 parpadeos on/off).
+  * El SysTick o un timer sirve para contar milisegundos. Por ejemplo, cada periodo dado en ms se alterna el estado de la luz (encendido/apagado) para generar el parpadeo. [Ver (ECE/SAE/FMVS)]
+  * Para los patrones de 3 parpadeos, se lleva un conteo interno (ej: cada toggle cuenta como medio ciclo de parpadeo; 6 toggles = 3 parpadeos on/off).
 
 ## Ejemplo de Código Simplificado
 
