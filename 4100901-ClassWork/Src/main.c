@@ -35,7 +35,7 @@ int main(void)
         case 0: // idle
             if (gpio_button_is_pressed() != 0) { // If button is pressed
                 state = 1;
-            } else if (systick_GetTick() >= 500) { // Blink LED every 500 ms
+            } else if (systick_GetTick() >= 500 ) { // Blink LED every 500 ms
                 state = 2;
             }
             break;
